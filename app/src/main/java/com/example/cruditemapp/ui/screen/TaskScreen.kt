@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cruditemapp.data.model.Task
-import com.example.cruditemapp.ui.viewmodel.TaskViewModel // <- Altera para o teu pacote
+import com.example.cruditemapp.ui.viewmodel.TaskViewModel
 
 @Composable
 fun TaskScreen(
@@ -23,7 +23,6 @@ fun TaskScreen(
     var selectedTask by remember { mutableStateOf<Task?>(null) }
 
     Column(modifier = modifier.padding(16.dp)) {
-        // Campo de entrada para o título.
         OutlinedTextField(
             value = title,
             onValueChange = { title = it },
@@ -31,7 +30,6 @@ fun TaskScreen(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        // Campo de entrada para a descrição.
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
@@ -40,13 +38,10 @@ fun TaskScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Botão para adicionar uma nova tarefa.
         Button(
             onClick = {
                 if (title.isNotEmpty() && description.isNotEmpty()) {
-                    // Chama a função do ViewModel para adicionar a tarefa.
                     viewModel.addTask(Task(title = title, description = description))
-                    // Limpa os campos de texto após adicionar.
                     title = ""
                     description = ""
                 }
@@ -58,13 +53,16 @@ fun TaskScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Lista de tarefas que ocupa o resto do ecrã.
         LazyColumn {
-            // 'items' é uma função otimizada para listas no LazyColumn.
             items(tasks) { task ->
                 TaskCard(
                     task = task,
-                    onDelete = { viewModel.deleteTask(task.id!!) },
+                    onDelete = {
+                        val idToDelete = task.id
+                        if (idToDelete != null) {
+                            viewModel.deleteTask(idToDelete)
+                        }
+                    },
                     onUpdate = {
                         selectedTask = task
                         showDialog = true
@@ -74,7 +72,6 @@ fun TaskScreen(
         }
     }
 
-    // Se 'showDialog' for verdadeiro, mostra o diálogo de edição.
     if (showDialog) {
         UpdateTaskDialog(
             task = selectedTask,
@@ -87,9 +84,6 @@ fun TaskScreen(
     }
 }
 
-/**
- * Um cartão para exibir uma única tarefa.
- */
 @Composable
 fun TaskCard(
     task: Task,
@@ -106,7 +100,13 @@ fun TaskCard(
             Text(text = task.title, style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = task.description, style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Texto para mostrar o ID
+            Text(text = "ID: ${task.id.orEmpty()}", style = MaterialTheme.typography.labelSmall)
+
             Spacer(modifier = Modifier.height(16.dp))
+
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                 Button(onClick = onDelete) {
                     Text("Apagar")
@@ -120,10 +120,6 @@ fun TaskCard(
     }
 }
 
-
-/**
- * O diálogo que aparece para editar uma tarefa.
- */
 @Composable
 fun UpdateTaskDialog(
     task: Task?,
@@ -132,7 +128,6 @@ fun UpdateTaskDialog(
 ) {
     if (task == null) return
 
-    // Estados para os campos de texto do diálogo.
     var title by remember { mutableStateOf(task.title) }
     var description by remember { mutableStateOf(task.description) }
 
@@ -156,7 +151,6 @@ fun UpdateTaskDialog(
         },
         confirmButton = {
             Button(onClick = {
-                // Cria uma cópia da tarefa com os novos dados e chama a função de update.
                 onUpdate(task.copy(title = title, description = description))
             }) {
                 Text("Salvar")
